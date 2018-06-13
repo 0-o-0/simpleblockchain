@@ -1,6 +1,8 @@
 package blockchain
 
-import ()
+import (
+	"fmt"
+)
 
 // UTXOPool represents a list of unspent transaction output
 type UTXOPool struct {
@@ -13,26 +15,51 @@ type UTXO struct {
   index   int32
 }
 
-// GetUpdatedUTXOPool creates a new UTXOPool after processing transactions
-func (up *UTXOPool) GetUpdatedUTXOPool(txs []*Transaction, coinbase *Transaction) *UTXOPool {
-  newPool := *up
-  for _, tx := range txs {
-    newPool.processTx(tx);
+// ProcessBlockTxs updates the UTXOPool by processing transactions in the block
+// and returns false if any of the transactio is invalid
+func (up *UTXOPool) ProcessBlockTxs(blk *Block) bool {
+  for _, tx := range blk.Txs {
+    if !up.processTx(tx) {
+      return false
+    }
   }
-  return &newPool
+
+  if !up.processTx(blk.Coinbase) {
+    return false
+  }
+
+  return true
 }
 
-func (up *UTXOPool) processTx(tx *Transaction) {
+func (up *UTXOPool) processTx(tx *Transaction) bool {
+  for i, output := range tx.Outputs {
+    utxo := UTXO{tx.Hash, int32(i)}
+    _, exist := up.outputs[utxo]
+    if exist {
+      return false
+    }
+    up.outputs[utxo] = output
+  }
+
   for _, input := range tx.Inputs {
     utxo := UTXO{
       input.PrevTxHash,
       input.PrevTxOutputIdx,
     }
+    _, exist := up.outputs[utxo]
+    if !exist {
+      return false
+    }
     delete(up.outputs, utxo)
   }
 
-  for i, output := range tx.Outputs {
-    utxo := UTXO{tx.Hash, int32(i)}
-    up.outputs[utxo] = output
+  return true
+}
+
+// Print prints the blockchain for debugging
+func (up *UTXOPool) Print() {
+	fmt.Println("==========UTXOP==========")
+  for utxo, output := range up.outputs {
+    fmt.Println(utxo.txHash, utxo.index, output.Value)
   }
 }

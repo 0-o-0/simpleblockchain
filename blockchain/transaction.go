@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
+	"time"
 )
 
 const (
@@ -32,6 +33,7 @@ type Transaction struct {
 	Outputs    []Output
 	Hash       string
 	IsCoinbase bool
+	Ts         int64
 }
 
 // NewCoinbaseTx creates a new coinbase transaction which rewards the block creator
@@ -42,6 +44,7 @@ func NewCoinbaseTx(addr string) *Transaction {
 			Output{COINBASE, addr},
 		},
 		IsCoinbase: true,
+		Ts:         time.Now().UnixNano(),
 	}
 	coinbase.Hash = coinbase.hashStr()
 	return &coinbase
@@ -53,6 +56,7 @@ func (tx *Transaction) hashStr() string {
 	encoder.Encode(tx.Inputs)
 	encoder.Encode(tx.Outputs)
 	encoder.Encode(tx.IsCoinbase)
+	encoder.Encode(tx.Ts)
 	hash := sha256.Sum256(b.Bytes())
 	return hex.EncodeToString(hash[:])
 }
@@ -60,8 +64,8 @@ func (tx *Transaction) hashStr() string {
 // Print prints the transaction for debugging
 func (tx *Transaction) Print() {
 	if tx.IsCoinbase {
-		fmt.Printf("  =Transaction= coinbase to %s for %f\n", tx.Outputs[0].Address, tx.Outputs[0].Value)
+		fmt.Printf("  =Transaction %s coinbase to %s for %f\n", tx.Hash, tx.Outputs[0].Address, tx.Outputs[0].Value)
 	} else {
-		fmt.Printf("  =Transaction= from %s to %s for %f\n", tx.Inputs[0].PrevTxHash, tx.Outputs[0].Address, tx.Outputs[0].Value)
+		fmt.Printf("  =Transaction %s from %s to %s for %f\n", tx.Hash, tx.Inputs[0].PrevTxHash, tx.Outputs[0].Address, tx.Outputs[0].Value)
 	}
 }

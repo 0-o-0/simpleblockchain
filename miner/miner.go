@@ -2,7 +2,6 @@ package miner
 
 import (
 	"fmt"
-	"math/big"
 	"runtime"
 	"sync"
 	"time"
@@ -13,10 +12,8 @@ import (
 const (
 	// MaxNonce defines the maximum possible value of nonce
 	MaxNonce = ^uint32(0) // 2^32-1
-	// DefaultDifficulty defines the number of leading zeros of the targeted deficulty
-	DefaultDifficulty = 2
 	// BlockchainSyncSecs defines the number of seconds each miner waits to sync blockchain
-	BlockchainSyncSecs = 30
+	BlockchainSyncSecs = 10
 )
 
 var (
@@ -61,7 +58,6 @@ func (m *Miner) Start() {
 }
 
 func (m *Miner) mine(quit chan bool) {
-	fmt.Println("start mining...")
 	ticker := time.NewTicker(time.Second * BlockchainSyncSecs)
 	defer ticker.Stop()
 	for {
@@ -77,7 +73,6 @@ func (m *Miner) findNonce(block *blockchain.Block, ticker *time.Ticker,
 	quit chan bool) bool {
 
 	for i := uint32(0); i < MaxNonce; i++ {
-		fmt.Println("trying ", i)
 		select {
 		case <-quit:
 			return false
@@ -91,8 +86,7 @@ func (m *Miner) findNonce(block *blockchain.Block, ticker *time.Ticker,
 
 		block.Nonce = i
 		hash := block.HashBytes()
-		if validateBlockHash(hash) {
-			fmt.Println("found a block!")
+		if blockchain.ValidateBlockHash(hash) {
 			return true
 		}
 	}
@@ -100,22 +94,12 @@ func (m *Miner) findNonce(block *blockchain.Block, ticker *time.Ticker,
 	return false
 }
 
-func validateBlockHash(bytes []byte) bool {
-	target := new(big.Int)
-	target.SetBit(target, 256-DefaultDifficulty, 1)
-	//fmt.Println(target.String())
-	hash := new(big.Int).SetBytes(bytes)
-	//fmt.Println(hash.String())
-	return hash.Cmp(target) <= 0
-}
-
 func (m *Miner) publishBlock(blk *blockchain.Block) {
-	fmt.Println("publishing the block...")
-
 	m.publishBlockLock.Lock()
 	defer m.publishBlockLock.Unlock()
 
-	m.bc.ProcessBlock(blk)
-
-	m.bc.Print()
+	if m.bc.ProcessBlock(blk) {
+		fmt.Println("A new block has been mined!")
+		m.bc.Print()
+	}
 }
