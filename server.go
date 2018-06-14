@@ -8,6 +8,7 @@ import (
 
 	"github.com/0-o-0/simpleblockchain/blockchain"
 	"github.com/0-o-0/simpleblockchain/miner"
+	"github.com/btcsuite/btcd/peer"
 )
 
 const (
@@ -21,6 +22,7 @@ type server struct {
 	blockchain *blockchain.Blockchain
 	miner      *miner.Miner
 	keys       []*rsa.PrivateKey
+	peers      *peer.Peer
 }
 
 func newServer() *server {
