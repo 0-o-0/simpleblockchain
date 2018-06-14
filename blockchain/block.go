@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
@@ -19,8 +20,8 @@ type Block struct {
 }
 
 // NewGenesisBlock creates a new genesis block
-func NewGenesisBlock(addr string) *Block {
-	coinbase := NewCoinbaseTx("") // TODO: add addr
+func NewGenesisBlock(pk rsa.PublicKey) *Block {
+	coinbase := NewCoinbaseTx(pk)
 	genesis := Block{
 		Height:        0,
 		PrevBlockHash: "",

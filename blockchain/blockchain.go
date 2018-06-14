@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"math/big"
 )
@@ -22,8 +23,8 @@ type Blockchain struct {
 }
 
 // New creates a new blockchain with genesis block
-func New() *Blockchain {
-	genesis := NewGenesisBlock("") // TODO: add addr
+func New(pk rsa.PublicKey) *Blockchain {
+	genesis := NewGenesisBlock(pk)
 	return &Blockchain{
 		lastBlock: genesis,
 		blocks:    map[string]*Block{genesis.Hash: genesis},
@@ -99,12 +100,12 @@ func (tx *Transaction) addTx() bool {
 }
 
 // NewBlock creates a new block on top of the tip block
-func (bc *Blockchain) NewBlock() *Block {
+func (bc *Blockchain) NewBlock(pk rsa.PublicKey) *Block {
 	return &Block{
 		Height:        bc.lastBlock.Height + 1,
 		PrevBlockHash: bc.lastBlock.Hash,
 		Txs:           bc.txPool,
-		Coinbase:      NewCoinbaseTx(""), // TODO: add addr
+		Coinbase:      NewCoinbaseTx(pk),
 		Nonce:         0,
 	}
 }

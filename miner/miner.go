@@ -1,7 +1,9 @@
 package miner
 
 import (
+	"crypto/rsa"
 	"fmt"
+	"math/rand"
 	"runtime"
 	"sync"
 	"time"
@@ -27,14 +29,24 @@ type Miner struct {
 	bc               *blockchain.Blockchain
 	quit             chan bool
 	publishBlockLock sync.Mutex
+	addresses        []*rsa.PublicKey
 }
 
 // New creates a new miner with default number of workers and the given blockchain
-func New(bc *blockchain.Blockchain) *Miner {
-	return &Miner{
+func New(bc *blockchain.Blockchain, keys []*rsa.PrivateKey) *Miner {
+	miner := Miner{
 		numWorkers: uint32(defaultNumWorkers),
 		bc:         bc,
 	}
+	for _, key := range keys {
+		miner.addresses = append(miner.addresses, &key.PublicKey)
+	}
+	return &miner
+}
+
+// SetBlockchain sets the miner's blockchain
+func (m *Miner) SetBlockchain(bc *blockchain.Blockchain) {
+	m.bc = bc
 }
 
 // Start kicks off workers to solve the hash puzzle in a concurrency-safe manner
@@ -61,7 +73,7 @@ func (m *Miner) mine(quit chan bool) {
 	ticker := time.NewTicker(time.Second * BlockchainSyncSecs)
 	defer ticker.Stop()
 	for {
-		block := m.bc.NewBlock()
+		block := m.bc.NewBlock(m.getRandomAddress())
 		if m.findNonce(block, ticker, quit) {
 			block.Hash = block.HashStr()
 			m.publishBlock(block)
@@ -102,4 +114,8 @@ func (m *Miner) publishBlock(blk *blockchain.Block) {
 		fmt.Println("A new block has been mined!")
 		m.bc.Print()
 	}
+}
+
+func (m *Miner) getRandomAddress() rsa.PublicKey {
+	return *m.addresses[rand.Intn(len(m.addresses))]
 }
