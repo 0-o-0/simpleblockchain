@@ -15,7 +15,7 @@ const (
 	// MaxNonce defines the maximum possible value of nonce
 	MaxNonce = ^uint32(0) // 2^32-1
 	// BlockchainSyncSecs defines the number of seconds each miner waits to sync blockchain
-	BlockchainSyncSecs = 10
+	BlockchainSyncSecs = 5
 )
 
 var (
@@ -89,7 +89,7 @@ func (m *Miner) findNonce(block *blockchain.Block, ticker *time.Ticker,
 		case <-quit:
 			return false
 		case <-ticker.C:
-			if m.bc.Height()+1 > block.Height {
+			if m.bc.Height()+1 > block.Height || m.bc.GetTxCount() > len(block.Txs) {
 				return false
 			}
 		default:

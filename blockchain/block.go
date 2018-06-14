@@ -21,7 +21,7 @@ type Block struct {
 
 // NewGenesisBlock creates a new genesis block
 func NewGenesisBlock(pk rsa.PublicKey) *Block {
-	coinbase := NewCoinbaseTx(pk)
+	coinbase := NewCoinbaseTx(pk, 0.0)
 	genesis := Block{
 		Height:        0,
 		PrevBlockHash: "",
